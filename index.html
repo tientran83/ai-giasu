@@ -3,107 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Gia Sư Thông Minh</title>
+    <title>AI Gia sư Socratic</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .chat-container { width: 100%; max-width: 600px; height: 90vh; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
-        .chat-header { background: #4f46e5; color: white; padding: 15px 20px; text-align: center; font-size: 1.2rem; font-weight: bold; }
-        .chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; }
-        .user-message { background: #4f46e5; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .bot-message { background: #f3f4f6; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #e5e7eb; }
-        .bot-message .praise { color: #059669; font-weight: 600; margin-bottom: 6px; }
-        .bot-message .concept { margin-bottom: 8px; }
-        .bot-message ul { margin: 8px 0 8px 20px; color: #374151; }
-        .bot-message .question { margin-top: 8px; font-weight: 600; color: #4f46e5; }
-        .input-area { padding: 15px; background: white; border-top: 1px solid #e5e7eb; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; font-size: 0.95rem; }
-        input:focus { border-color: #4f46e5; }
-        button { background: #4f46e5; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-        button:hover { background: #4338ca; }
-        .loading { font-style: italic; color: #6b7280; font-size: 0.85rem; }
+        body { background-color: #f0f2f5; display: flex; justify-content: center; height: 100vh; }
+        .chat-container { width: 100%; max-width: 600px; background: #fff; display: flex; flex-direction: column; height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .chat-header { background: #0084ff; color: #fff; padding: 15px; text-align: center; font-size: 1.2rem; font-weight: bold; }
+        .chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { max-width: 80%; padding: 10px 14px; border-radius: 18px; line-height: 1.4; word-wrap: break-word; }
+        .user { align-self: flex-end; background: #0084ff; color: #fff; border-bottom-right-radius: 4px; }
+        .ai { align-self: flex-start; background: #e4e6eb; color: #000; border-bottom-left-radius: 4px; }
+        .typing { font-style: italic; color: #888; display: none; align-self: flex-start; padding-left: 15px; padding-bottom: 5px; }
+        .input-area { display: flex; padding: 10px; border-top: 1px solid #ddd; background: #fff; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 1rem; }
+        button { margin-left: 8px; padding: 10px 18px; background: #0084ff; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #006bce; }
     </style>
 </head>
 <body>
-
-<div class="chat-container">
-    <div class="chat-header">🎓 AI Gia Sư Socratic</div>
-    <div class="chat-box" id="chatBox">
-        <div class="message bot-message">
-            Chào em! Hôm nay em có thắc mắc bài tập nào cần gia sư hướng dẫn không?
+    <div class="chat-container">
+        <div class="chat-header">🎓 AI Gia sư Socratic</div>
+        <div class="chat-box" id="chatBox">
+            <div class="message ai">Chào em! Hôm nay chúng ta sẽ cùng tìm hiểu bài học nào? Em cứ đưa câu hỏi hoặc chủ đề lên nhé!</div>
+        </div>
+        <div class="typing" id="typing">AI Gia sư đang suy nghĩ...</div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Nhập câu hỏi của bạn..." onkeydown="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">Gửi</button>
         </div>
     </div>
-    <div class="input-area">
-        <input type="text" id="userInput" placeholder="Nhập câu hỏi hoặc bài tập..." onkeypress="handleKeyPress(event)">
-        <button onclick="sendMessage()">Gửi</button>
-    </div>
-</div>
 
-<script>
-    const sessionId = "session_" + Math.random().toString(36).substring(2, 9);
+    <script>
+        let chatHistory = [];
 
-    async function sendMessage() {
-        const input = document.getElementById("userInput");
-        const chatBox = document.getElementById("chatBox");
-        const text = input.value.trim();
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
 
-        if (!text) return;
+            appendMessage('user', message);
+            input.value = '';
 
-        // Thêm tin nhắn học sinh vào khung chat
-        chatBox.innerHTML += `<div class="message user-message">${text}</div>`;
-        input.value = "";
-        chatBox.scrollTop = chatBox.scrollHeight;
+            const typing = document.getElementById('typing');
+            typing.style.display = 'block';
 
-        // Thêm thông báo "Đang suy nghĩ..."
-        const loadingId = "loading-" + Date.now();
-        chatBox.innerHTML += `<div class="message bot-message loading" id="${loadingId}">Gia sư đang suy nghĩ...</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ history: chatHistory, message: message })
+                });
 
-        try {
-            const response = await fetch('/api/tutor/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    subject: "Toán học",
-                    grade_level: "Lớp 9",
-                    question: text
-                })
-            });
+                const data = await res.json();
+                typing.style.display = 'none';
 
-            const data = await response.json();
-            document.getElementById(loadingId).remove();
-
-            // Tạo nội dung câu trả lời đẹp đẽ
-            let hintsHTML = "<ul>";
-            data.hints.forEach(h => {
-                hintsHTML += `<li><b>Bước ${h.step_number}:</b> ${h.explanation}</li>`;
-            });
-            hintsHTML += "</ul>";
-
-            const botReply = `
-                <div class="message bot-message">
-                    <div class="praise">🌟 ${data.praise_or_encouragement}</div>
-                    <div class="concept">${data.concept_explanation}</div>
-                    ${hintsHTML}
-                    <div class="question">❓ ${data.guided_question}</div>
-                </div>
-            `;
-
-            chatBox.innerHTML += botReply;
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-        } catch (error) {
-            document.getElementById(loadingId).remove();
-            chatBox.innerHTML += `<div class="message bot-message" style="color:red;">Đã có lỗi xảy ra. Vui lòng thử lại!</div>`;
+                if (res.ok) {
+                    appendMessage('ai', data.reply);
+                    chatHistory.push({ role: 'user', text: message });
+                    chatHistory.push({ role: 'model', text: data.reply });
+                } else {
+                    appendMessage('ai', 'Lỗi: ' + (data.detail || 'Không thể kết nối API'));
+                }
+            } catch (err) {
+                typing.style.display = 'none';
+                appendMessage('ai', 'Đã xảy ra lỗi kết nối!');
+            }
         }
-    }
 
-    function handleKeyPress(e) {
-        if (e.key === 'Enter') sendMessage();
-    }
-</script>
-
+        function appendMessage(sender, text) {
+            const chatBox = document.getElementById('chatBox');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}`;
+            msgDiv.innerText = text;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
 </body>
 </html>
