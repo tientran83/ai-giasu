@@ -1,83 +1,76 @@
-import sys
-import os
-sys.stdout.reconfigure(encoding='utf-8')
-
-from typing import List, Dict
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
-from google import genai
-from google.genai import types
-from pydantic import BaseModel, Field
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import google.generativeai as genai
+import os
 
-# 1. Định nghĩa cấu trúc JSON đầu ra
-class StepHint(BaseModel):
-    step_number: int = Field(description="Số thứ tự của bước gợi ý")
-    explanation: str = Field(description="Lời giải thích hoặc câu hỏi gợi mở")
+app = FastAPI()
 
-class TutorResponse(BaseModel):
-    praise_or_encouragement: str = Field(description="Lời khen ngợi, động viên")
-    concept_explanation: str = Field(description="Giải thích ngắn gọn khái niệm")
-    hints: List[StepHint] = Field(description="Danh sách các bước gợi ý")
-    guided_question: str = Field(description="Câu hỏi dẫn dắt ở cuối")
+# Cấu hình CORS để gọi API không bị chặn
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-class StudentQuery(BaseModel):
-    session_id: str = Field(default="hoc_sinh_01", description="ID phiên học")
-    subject: str = Field(default="Toán học", description="Môn học")
-    grade_level: str = Field(default="Lớp 9", description="Lớp")
-    question: str = Field(..., description="Câu hỏi của học sinh")
+# Lấy API Key từ biến môi trường Render
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
-app = FastAPI(title="AI Tutor API")
+# Định nghĩa cấu trúc dữ liệu gửi lên
+class Message(BaseModel):
+    role: str  # "user" hoặc "model"
+    text: str
 
-# 2. Khởi tạo Gemini Client (Điền API Key thật của bạn vào đây)
-client = genai.Client(api_key="AQ.Ab8RN6J6MVVLxhLVat_9BxU8KW9sdB3W87-Km_8DhlkgpJnA-Q")
+class ChatRequest(BaseModel):
+    history: list[Message]
+    message: str
 
-sessions_db: Dict[str, List[str]] = {}
+# Prompt hệ thống định hình phong cách Gia sư Socratic
+SYSTEM_PROMPT = """
+Bạn là một AI Gia sư dạy học theo phương pháp Socratic.
+Quy tắc vàng của bạn:
+1. KHÔNG BAO GIỜ cho đáp án trực tiếp ngay lập tức.
+2. Luôn đặt câu hỏi gợi mở, ngắn gọn, từng bước một để học sinh tự suy luận.
+3. Khen ngợi nhẹ nhàng khi học sinh trả lời đúng.
+4. Nếu học sinh trả lời sai, hãy chỉ ra điểm mâu thuẫn trong câu trả lời của họ bằng một câu hỏi khác.
+5. Giữ giọng văn thân thiện, kiên nhẫn, gần gũi như một người anh/chị hướng dẫn.
+"""
 
-# Route phục vụ giao diện trang Web Chat
 @app.get("/", response_class=HTMLResponse)
-async def get_index():
-    if os.path.exists("index.html"):
+def read_root():
+    try:
         with open("index.html", "r", encoding="utf-8") as f:
             return f.read()
-    return "<h1>Không tìm thấy file index.html!</h1>"
+    except FileNotFoundError:
+        return "<h1>Không tìm thấy file index.html!</h1>"
 
-@app.post("/api/tutor/chat", response_model=TutorResponse)
-async def ask_tutor(query: StudentQuery):
-    session_id = query.session_id
-    if session_id not in sessions_db:
-        sessions_db[session_id] = []
-
-    sessions_db[session_id].append(f"Học sinh: {query.question}")
-
-    system_instruction = (
-        f"Bạn là AI Gia sư môn {query.subject} trình độ {query.grade_level}. "
-        "Hãy dùng phương pháp Socratic để gợi mở, không cho ngay đáp án trực tiếp. "
-        "Dựa vào lịch sử hội thoại để đưa ra phản hồi phù hợp."
-    )
-
-    full_prompt = "\n".join(sessions_db[session_id])
-
+@app.post("/api/chat")
+def chat(req: ChatRequest):
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="Chưa cài đặt GEMINI_API_KEY")
+    
     try:
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=full_prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.3,
-                response_mime_type="application/json",
-                response_schema=TutorResponse,
-            ),
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=SYSTEM_PROMPT
         )
         
-        if response.parsed:
-            sessions_db[session_id].append(f"Gia sư: {response.parsed.guided_question}")
-            return response.parsed
-        else:
-            raise HTTPException(status_code=500, detail="Mô hình không trả về dữ liệu đúng định dạng.")
-
+        # Chuyển đổi lịch sử chat sang định dạng của Gemini
+        formatted_history = []
+        for msg in req.history:
+            formatted_history.append({
+                "role": "user" if msg.role == "user" else "model",
+                "parts": [msg.text]
+            })
+            
+        chat_session = model.start_chat(history=formatted_history)
+        response = chat_session.send_message(req.message)
+        
+        return {"reply": response.text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
