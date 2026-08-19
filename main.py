@@ -25,18 +25,19 @@ def chat(req: ChatRequest):
         return {"response": "Lỗi: Chưa cấu hình GEMINI_API_KEY trên Render!"}
     
     try:
-        sys_instruct = (
-            "Bạn là một AI Gia sư dạy lập trình từ con số 0. "
-            "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
+        # Cấu hình system prompt chuẩn qua types.GenerateContentConfig
+        config = types.GenerateContentConfig(
+            system_instruction=(
+                "Bạn là một AI Gia sư dạy lập trình từ con số 0. "
+                "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
+            )
         )
         
-        # Gọi model với cấu hình GenerateContentConfig chuẩn từ SDK
+        # Gọi mô hình gemini-2.5-flash chuẩn
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=req.message,
-            config=types.GenerateContentConfig(
-                system_instruction=sys_instruct
-            )
+            config=config
         )
         return {"response": response.text}
     except Exception as e:
