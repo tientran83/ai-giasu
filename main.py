@@ -29,12 +29,13 @@ def chat(req: ChatRequest):
             "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
         
-        # Cập nhật tên model chính xác sang gemini-2.5-flash
+        # Cập nhật tên model chính xác sang gemini-3.6-flash
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.6-flash",
             contents=req.message,
             config={"system_instruction": sys_instruct}
         )
+        
         return {"response": response.text}
     except Exception as e:
         return {"response": f"Lỗi xử lý AI: {str(e)}"}
