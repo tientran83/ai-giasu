@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import os
 
 app = FastAPI()
@@ -16,8 +17,6 @@ app.add_middleware(
 )
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
 
 class Message(BaseModel):
     role: str
@@ -65,21 +64,39 @@ def chat(req: ChatRequest):
         raise HTTPException(status_code=500, detail="Chưa cài đặt GEMINI_API_KEY")
     
     try:
-        # Sử dụng model gemini-1.5-flash với SDK bản mới
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+        # Khởi tạo Client theo chuẩn SDK google-genai mới
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        
+        # Chuyển đổi lịch sử cuộc trò chuyện
+        contents = []
+        for msg in req.history:
+            role = "user" if msg.role == "user" else "model"
+            contents.append(
+                types.Content(
+                    role=role,
+                    parts=[types.Part.from_text(text=msg.text)]
+                )
+            )
+        
+        # Thêm tin nhắn hiện tại của người dùng
+        contents.append(
+            types.Content(
+                role="user",
+                parts=[types.Part.from_text(text=req.message)]
+            )
+        )
+        
+        # Cấu hình System Instruction
+        config = types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT
         )
         
-        formatted_history = []
-        for msg in req.history:
-            formatted_history.append({
-                "role": "user" if msg.role == "user" else "model",
-                "parts": [msg.text]
-            })
-            
-        chat_session = model.start_chat(history=formatted_history)
-        response = chat_session.send_message(req.message)
+        # Gọi mô hình gemini-2.5-flash (hoặc gemini-1.5-flash)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents,
+            config=config
+        )
         
         return {"reply": response.text}
     except Exception as e:
