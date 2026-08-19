@@ -4,203 +4,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Gia sư Socratic - Dark Mode</title>
+    <title>AI Gia sư Socratic</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        body { 
-            background-color: #121212; 
-            color: #e0e0e0;
-            display: flex; 
-            justify-content: center; 
-            height: 100vh; 
-            overflow: hidden; /* Cố định màn hình, chỉ cuộn khung chat */
-        }
-
-        .chat-container { 
-            width: 100%; 
-            max-width: 650px; 
-            background: #1e1e1e; 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); 
-        }
-
-        .chat-header { 
-            background: #1f2937; 
-            color: #38bdf8; 
-            padding: 16px; 
-            text-align: center; 
-            font-size: 1.25rem; 
-            font-weight: bold; 
-            border-bottom: 1px solid #374151;
-            flex-shrink: 0;
-        }
-
-        /* Khung chứa tin nhắn cho phép cuộn */
-        .chat-box { 
-            flex: 1; 
-            padding: 20px; 
-            overflow-y: scroll; /* Bắt buộc hiển thị tính năng cuộn vertical */
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
-        }
-
-        /* TÙY CHỈNH THANH CUỘN (SCROLLBAR) HIỆN ĐẠI */
-        .chat-box::-webkit-scrollbar {
-            width: 8px; /* Độ rộng thanh cuộn */
-        }
-        .chat-box::-webkit-scrollbar-track {
-            background: #1e1e1e; /* Màu nền rãnh cuộn */
-        }
-        .chat-box::-webkit-scrollbar-thumb {
-            background: #374151; /* Màu con trượt cuộn */
-            border-radius: 4px;
-        }
-        .chat-box::-webkit-scrollbar-thumb:hover {
-            background: #0284c7; /* Đổi màu khi di chuột vào thanh cuộn */
-        }
-
-        .message { 
-            max-width: 85%; 
-            padding: 12px 16px; 
-            border-radius: 16px; 
-            line-height: 1.5; 
-            word-wrap: break-word; 
-            font-size: 0.95rem;
-            white-space: pre-wrap;
-        }
-
-        .user { 
-            align-self: flex-end; 
-            background: #0284c7; 
-            color: #ffffff; 
-            border-bottom-right-radius: 4px; 
-        }
-
-        .ai { 
-            align-self: flex-start; 
-            background: #2a2d32; 
-            color: #e2e8f0; 
-            border-bottom-left-radius: 4px; 
-            border: 1px solid #3f444e;
-        }
-
-        .typing { 
-            font-style: italic; 
-            color: #9ca3af; 
-            display: none; 
-            align-self: flex-start; 
-            padding-left: 15px; 
-            padding-bottom: 8px; 
-            font-size: 0.88rem;
-        }
-
-        .input-area { 
-            display: flex; 
-            padding: 14px; 
-            border-top: 1px solid #2d3748; 
-            background: #1e1e1e; 
-            flex-shrink: 0;
-        }
-
-        input { 
-            flex: 1; 
-            padding: 12px 16px; 
-            background: #2d3748;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
             color: #ffffff;
-            border: 1px solid #4a5568; 
-            border-radius: 24px; 
-            outline: none; 
-            font-size: 1rem; 
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
-
-        input::placeholder {
-            color: #a0aec0;
+        .header {
+            padding: 15px;
+            background-color: #1e1e2e;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
-
-        input:focus {
-            border-color: #38bdf8;
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            padding-bottom: 90px; /* Chừa khoảng trống cho khung chat dưới cùng */
         }
-
-        button { 
-            margin-left: 10px; 
-            padding: 10px 20px; 
-            background: #0284c7; 
-            color: white; 
-            border: none; 
-            border-radius: 24px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: background 0.2s;
+        .message {
+            margin-bottom: 15px;
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
         }
-
-        button:hover { 
-            background: #0369a1; 
+        .user {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 2px;
+        }
+        .ai {
+            background-color: #2a2a3c;
+            color: white;
+            margin-right: auto;
+            border-bottom-left-radius: 2px;
+        }
+        /* Khung nhập liệu cố định dưới đáy màn hình */
+        .input-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: #1e1e2e;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        textarea {
+            flex: 1;
+            padding: 12px;
+            border-radius: 18px;
+            border: 1px solid #444;
+            background: #2a2a3c;
+            color: #fff;
+            font-size: 16px;
+            resize: none;
+            max-height: 100px;
+            font-family: inherit;
+            outline: none;
+        }
+        button {
+            padding: 12px 18px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 18px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            white-space: nowrap;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">🎓 AI Gia sư Socratic</div>
-        <div class="chat-box" id="chatBox">
-            <div class="message ai">Chào em! Hôm nay chúng ta sẽ cùng tìm hiểu bài học nào? Em cứ đưa câu hỏi hoặc chủ đề lên nhé!</div>
-        </div>
-        <div class="typing" id="typing">AI Gia sư đang suy nghĩ...</div>
-        <div class="input-area">
-            <input type="text" id="userInput" placeholder="Nhập câu hỏi của bạn..." onkeydown="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()">Gửi</button>
+
+    <div class="header">🎓 AI Gia sư Socratic</div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="message ai">
+            Chào bạn! Hôm nay chúng ta sẽ cùng học chủ đề nào? Hãy gửi câu hỏi cho mình nhé!
         </div>
     </div>
 
-    <script>
-        let chatHistory = [];
+    <div class="input-container">
+        <!-- Khung Textarea hỗ trợ phím xuống hàng trên bàn phím điện thoại -->
+        <textarea id="userInput" rows="1" placeholder="Nhập câu hỏi tại đây..."></textarea>
+        <button onclick="sendMessage()">Gửi</button>
+    </div>
 
+    <script>
         async function sendMessage() {
-            const input = document.getElementById('userInput');
-            const message = input.value.trim();
+            const inputField = document.getElementById("userInput");
+            const message = inputField.value.trim();
             if (!message) return;
 
-            appendMessage('user', message);
-            input.value = '';
+            const chatContainer = document.getElementById("chatContainer");
 
-            const typing = document.getElementById('typing');
-            typing.style.display = 'block';
+            // Hiển thị tin nhắn người dùng
+            const userDiv = document.createElement("div");
+            userDiv.className = "message user";
+            userDiv.innerText = message;
+            chatContainer.appendChild(userDiv);
+
+            inputField.value = "";
+            chatContainer.scrollTop = chatContainer.scrollHeight;
 
             try {
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ history: chatHistory, message: message })
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message })
                 });
 
-                const data = await res.json();
-                typing.style.display = 'none';
+                const data = await response.json();
 
-                if (res.ok) {
-                    appendMessage('ai', data.reply);
-                    chatHistory.push({ role: 'user', text: message });
-                    chatHistory.push({ role: 'model', text: data.reply });
-                } else {
-                    appendMessage('ai', 'Lỗi: ' + (data.detail || 'Không thể kết nối API'));
-                }
-            } catch (err) {
-                typing.style.display = 'none';
-                appendMessage('ai', 'Đã xảy ra lỗi kết nối!');
+                // Hiển thị phản hồi từ AI
+                const aiDiv = document.createElement("div");
+                aiDiv.className = "message ai";
+                aiDiv.innerText = data.response;
+                chatContainer.appendChild(aiDiv);
+
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            } catch (error) {
+                console.error("Lỗi:", error);
             }
-        }
-
-        function appendMessage(sender, text) {
-            const chatBox = document.getElementById('chatBox');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${sender}`;
-            msgDiv.innerText = text;
-            chatBox.appendChild(msgDiv);
-            
-            // Tự động cuộn xuống dưới cùng mỗi khi có tin nhắn mới
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
 </body>
