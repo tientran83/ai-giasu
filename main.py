@@ -31,7 +31,7 @@ def chat(req: ChatRequest):
         
         # Sử dụng model gemini-2.0-flash chuẩn của SDK google-genai
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=req.message,
             config={"system_instruction": sys_instruct}
         )
