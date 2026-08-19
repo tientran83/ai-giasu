@@ -7,7 +7,6 @@ import os
 
 app = FastAPI()
 
-# Cấu hình CORS để gọi API không bị chặn
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,22 +15,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Lấy API Key từ biến môi trường Render
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
-# Định nghĩa cấu trúc dữ liệu gửi lên
 class Message(BaseModel):
-    role: str  # "user" hoặc "model"
+    role: str
     text: str
 
 class ChatRequest(BaseModel):
     history: list[Message]
     message: str
 
-# Prompt hệ thống định hình phong cách Gia sư Socratic
-SYSTEM_PROMPT = """Bạn là một AI Gia sư chuyên nghiệp, kiên nhẫn và giàu kinh nghiệm, đóng vai trò là một Mentor theo sát học viên trong Lộ trình trở thành Kỹ sư AI (AI Engineer) gồm 7 giai đoạn.
+SYSTEM_PROMPT = """
+Bạn là một AI Gia sư chuyên nghiệp, kiên nhẫn và giàu kinh nghiệm, đóng vai trò là một Mentor theo sát học viên trong Lộ trình trở thành Kỹ sư AI (AI Engineer) gồm 7 giai đoạn.
 
 PHƯƠNG PHÁP GIẢNG DẠY (SOCRATIC METHOD):
 1. Không bao giờ đưa toàn bộ đáp án hoặc lý thuyết dài dòng ngay lập tức.
@@ -52,13 +49,6 @@ QUY TRÌNH HỌC TẬP:
 - Luôn kiểm tra xem học sinh đang ở Giai đoạn nào.
 - Đưa ra bài tập/câu hỏi thực hành cụ thể ở từng bài học.
 - Giữ giọng văn thân thiện, gần gũi như một người anh/chị hướng dẫn (xưng "chị/anh/thầy" hoặc "mình" và gọi học viên là "em" hoặc "bạn").
-Bạn là một AI Gia sư dạy học theo phương pháp Socratic.
-Quy tắc vàng của bạn:
-1. KHÔNG BAO GIỜ cho đáp án trực tiếp ngay lập tức.
-2. Luôn đặt câu hỏi gợi mở, ngắn gọn, từng bước một để học sinh tự suy luận.
-3. Khen ngợi nhẹ nhàng khi học sinh trả lời đúng.
-4. Nếu học sinh trả lời sai, hãy chỉ ra điểm mâu thuẫn trong câu trả lời của họ bằng một câu hỏi khác.
-5. Giữ giọng văn thân thiện, kiên nhẫn, gần gũi như một người anh/chị hướng dẫn.
 """
 
 @app.get("/", response_class=HTMLResponse)
@@ -75,12 +65,12 @@ def chat(req: ChatRequest):
         raise HTTPException(status_code=500, detail="Chưa cài đặt GEMINI_API_KEY")
     
     try:
+        # Sử dụng model gemini-1.5-flash với SDK bản mới
         model = genai.GenerativeModel(
-            model_name="gemini-pro",
+            model_name="gemini-1.5-flash",
             system_instruction=SYSTEM_PROMPT
         )
         
-        # Chuyển đổi lịch sử chat sang định dạng của Gemini
         formatted_history = []
         for msg in req.history:
             formatted_history.append({
