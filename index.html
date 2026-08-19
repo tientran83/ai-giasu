@@ -135,7 +135,7 @@
                 // Hiển thị phản hồi từ AI
                 const aiDiv = document.createElement("div");
                 aiDiv.className = "message ai";
-                aiDiv.innerText = data.response;
+                aiDiv.innerText = data.response || data.reply || data.message || data.result || "Không nhận được phản hồi";
                 chatContainer.appendChild(aiDiv);
 
                 chatContainer.scrollTop = chatContainer.scrollHeight;
