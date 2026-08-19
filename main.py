@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Cấu hình API Key
 api_key = os.environ.get("GEMINI_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
@@ -25,14 +24,25 @@ def chat(req: ChatRequest):
         return {"response": "Lỗi: Chưa cấu hình GEMINI_API_KEY trên Render!"}
     
     try:
+        # Tự động lấy danh sách model mà API Key của bạn ĐƯỢC PHÉP dùng
+        available_models = [
+            m.name for m in genai.list_models() 
+            if 'generateContent' in m.supported_generation_methods
+        ]
+        
+        if not available_models:
+            return {"response": "Lỗi: API Key này không hỗ trợ mô hình generateContent nào!"}
+        
+        # Chọn model đầu tiên khả dụng trong danh sách của bạn
+        target_model = available_models[0]
+        
         sys_instruct = (
             "Bạn là một AI Gia sư dạy lập trình từ con số 0. "
             "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
         
-        # Sử dụng đúng tên model gemini-2.0-flash được Google cấp phép
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
+            model_name=target_model,
             system_instruction=sys_instruct
         )
         
