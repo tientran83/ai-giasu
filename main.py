@@ -1,15 +1,15 @@
 import os
+import google.generativeai as genai
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from google import genai
-from google.genai import types
 
 app = FastAPI()
 
-# Lấy API Key từ biến môi trường của Render
+# Cấu hình API Key
 api_key = os.environ.get("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
+if api_key:
+    genai.configure(api_key=api_key)
 
 class ChatRequest(BaseModel):
     message: str
@@ -21,24 +21,22 @@ def read_root():
 
 @app.post("/chat")
 def chat(req: ChatRequest):
-    if not client:
+    if not api_key:
         return {"response": "Lỗi: Chưa cấu hình GEMINI_API_KEY trên Render!"}
     
     try:
-        # Cấu hình system prompt chuẩn qua types.GenerateContentConfig
-        config = types.GenerateContentConfig(
-            system_instruction=(
-                "Bạn là một AI Gia sư dạy lập trình từ con số 0. "
-                "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
-            )
+        sys_instruct = (
+            "Bạn là một AI Gia sư dạy lập trình từ con số 0. "
+            "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
         
-        # Gọi mô hình gemini-2.5-flash chuẩn
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=req.message,
-            config=config
+        # Sử dụng thư viện chuẩn google-generativeai
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=sys_instruct
         )
+        
+        response = model.generate_content(req.message)
         return {"response": response.text}
     except Exception as e:
         return {"response": f"Lỗi xử lý AI: {str(e)}"}
