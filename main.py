@@ -21,32 +21,44 @@ def chat(req: ChatRequest):
     if not api_key:
         return {"response": "Lỗi: Chưa cấu hình GEMINI_API_KEY trên Render!"}
     
-    # Danh sách các URL endpoint khả thi để thử lần lượt
-    endpoints = [
-        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
-    ]
-    
-    payload = {
-        "contents": [
-            {
-                "parts": [{"text": f"Bạn là một AI Gia sư dạy lập trình từ con số 0. Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống.\n\nNgười học hỏi: {req.message}"}]
-            }
-        ]
-    }
-    
-    last_error = ""
-    for url in endpoints:
-        try:
-            res = requests.post(url, json=payload, timeout=30)
-            data = res.json()
+    try:
+        # Bước 1: Lấy danh sách các model khả dụng cho API Key này
+        list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+        list_res = requests.get(list_url, timeout=10)
+        
+        valid_model_name = None
+        if list_res.status_code == 200:
+            models = list_res.json().get("models", [])
+            for m in models:
+                # Tìm model có hỗ trợ generateContent
+                if "generateContent" in m.get("supportedGenerationMethods", []):
+                    valid_model_name = m.get("name") # Ví dụ: models/gemini-2.0-flash
+                    break
+        
+        if not valid_model_name:
+            # Fallback nếu không lấy được danh sách
+            valid_model_name = "models/gemini-2.0-flash"
+
+        # Bước 2: Gửi request chat đến model tìm được
+        chat_url = f"https://generativelanguage.googleapis.com/v1beta/{valid_model_name}:generateContent?key={api_key}"
+        
+        payload = {
+            "contents": [
+                {
+                    "parts": [{"text": f"Bạn là một AI Gia sư dạy lập trình từ con số 0. Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống.\n\nNgười học hỏi: {req.message}"}]
+                }
+            ]
+        }
+        
+        res = requests.post(chat_url, json=payload, timeout=30)
+        data = res.json()
+        
+        if res.status_code == 200:
+            text = data["candidates"][0]["content"]["parts"][0]["text"]
+            return {"response": text}
+        else:
+            error_msg = data.get("error", {}).get("message", res.text)
+            return {"response": f"Lỗi từ Google ({res.status_code}): {error_msg}"}
             
-            if res.status_code == 200:
-                text = data["candidates"][0]["content"]["parts"][0]["text"]
-                return {"response": text}
-            else:
-                last_error = data.get("error", {}).get("message", res.text)
-        except Exception as e:
-            last_error = str(e)
-            
-    return {"response": f"Lỗi xử lý AI: {last_error}"}
+    except Exception as e:
+        return {"response": f"Lỗi hệ thống: {str(e)}"}
