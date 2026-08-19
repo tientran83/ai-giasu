@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -7,16 +8,15 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* Nền tổng thể màu tối dịu mắt */
         body { 
             background-color: #121212; 
             color: #e0e0e0;
             display: flex; 
             justify-content: center; 
             height: 100vh; 
+            overflow: hidden; /* Cố định màn hình, chỉ cuộn khung chat */
         }
 
-        /* Khung chat chính */
         .chat-container { 
             width: 100%; 
             max-width: 650px; 
@@ -27,7 +27,6 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); 
         }
 
-        /* Thanh tiêu đề */
         .chat-header { 
             background: #1f2937; 
             color: #38bdf8; 
@@ -36,19 +35,34 @@
             font-size: 1.25rem; 
             font-weight: bold; 
             border-bottom: 1px solid #374151;
+            flex-shrink: 0;
         }
 
-        /* Khung nội dung tin nhắn */
+        /* Khung chứa tin nhắn cho phép cuộn */
         .chat-box { 
             flex: 1; 
             padding: 20px; 
-            overflow-y: auto; 
+            overflow-y: scroll; /* Bắt buộc hiển thị tính năng cuộn vertical */
             display: flex; 
             flex-direction: column; 
             gap: 12px; 
         }
 
-        /* Kiểu dáng tin nhắn chung */
+        /* TÙY CHỈNH THANH CUỘN (SCROLLBAR) HIỆN ĐẠI */
+        .chat-box::-webkit-scrollbar {
+            width: 8px; /* Độ rộng thanh cuộn */
+        }
+        .chat-box::-webkit-scrollbar-track {
+            background: #1e1e1e; /* Màu nền rãnh cuộn */
+        }
+        .chat-box::-webkit-scrollbar-thumb {
+            background: #374151; /* Màu con trượt cuộn */
+            border-radius: 4px;
+        }
+        .chat-box::-webkit-scrollbar-thumb:hover {
+            background: #0284c7; /* Đổi màu khi di chuột vào thanh cuộn */
+        }
+
         .message { 
             max-width: 85%; 
             padding: 12px 16px; 
@@ -59,7 +73,6 @@
             white-space: pre-wrap;
         }
 
-        /* Tin nhắn của Học sinh (Người dùng) */
         .user { 
             align-self: flex-end; 
             background: #0284c7; 
@@ -67,7 +80,6 @@
             border-bottom-right-radius: 4px; 
         }
 
-        /* Tin nhắn của AI Gia sư */
         .ai { 
             align-self: flex-start; 
             background: #2a2d32; 
@@ -76,7 +88,6 @@
             border: 1px solid #3f444e;
         }
 
-        /* Trạng thái đang suy nghĩ */
         .typing { 
             font-style: italic; 
             color: #9ca3af; 
@@ -87,15 +98,14 @@
             font-size: 0.88rem;
         }
 
-        /* Khung nhập liệu phía dưới */
         .input-area { 
             display: flex; 
             padding: 14px; 
             border-top: 1px solid #2d3748; 
             background: #1e1e1e; 
+            flex-shrink: 0;
         }
 
-        /* Ô nhập văn bản */
         input { 
             flex: 1; 
             padding: 12px 16px; 
@@ -115,7 +125,6 @@
             border-color: #38bdf8;
         }
 
-        /* Nút gửi */
         button { 
             margin-left: 10px; 
             padding: 10px 20px; 
@@ -189,6 +198,8 @@
             msgDiv.className = `message ${sender}`;
             msgDiv.innerText = text;
             chatBox.appendChild(msgDiv);
+            
+            // Tự động cuộn xuống dưới cùng mỗi khi có tin nhắn mới
             chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
