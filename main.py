@@ -1,7 +1,6 @@
 import os
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from google import genai
 
@@ -29,12 +28,13 @@ def chat(req: ChatRequest):
             "Bạn là một AI Gia sư dạy lập trình từ con số 0. "
             "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
+        
+        # Sử dụng model gemini-2.0-flash chuẩn của SDK google-genai
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             contents=req.message,
             config={"system_instruction": sys_instruct}
         )
         return {"response": response.text}
     except Exception as e:
         return {"response": f"Lỗi xử lý AI: {str(e)}"}
-      
