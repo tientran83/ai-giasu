@@ -30,9 +30,9 @@ def chat(req: ChatRequest):
             "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
         
-        # Sử dụng thư viện chuẩn google-generativeai
+        # Sử dụng đúng tên model gemini-2.0-flash được Google cấp phép
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.0-flash",
             system_instruction=sys_instruct
         )
         
