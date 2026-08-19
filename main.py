@@ -30,7 +30,7 @@ def chat(req: ChatRequest):
             "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=req.message,
             config={"system_instruction": sys_instruct}
         )
