@@ -91,12 +91,20 @@ def chat(req: ChatRequest):
             system_instruction=SYSTEM_PROMPT
         )
         
-        # Gọi mô hình gemini-2.5-flash (hoặc gemini-1.5-flash)
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=contents,
-            config=config
-        )
+        # Thử model chính gemini-3.6-flash, nếu quá tải (503) tự động chuyển sang gemini-2.5-flash
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=contents,
+                config=config
+            )
+        except Exception as model_err:
+            # Nếu model 3.6 quá tải, dùng model dự phòng
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=config
+            )
         
         return {"reply": response.text}
     except Exception as e:
