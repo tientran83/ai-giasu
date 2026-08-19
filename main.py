@@ -29,9 +29,9 @@ def chat(req: ChatRequest):
             "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
         
-        # Sử dụng model gemini-2.0-flash chuẩn của SDK google-genai
+        # Cập nhật tên model chính xác sang gemini-2.5-flash
         response = client.models.generate_content(
-            model="gemini-3.6-flash",
+            model="gemini-2.5-flash",
             contents=req.message,
             config={"system_instruction": sys_instruct}
         )
