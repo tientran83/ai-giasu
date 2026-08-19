@@ -76,7 +76,7 @@ def chat(req: ChatRequest):
     
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
+            model_name="gemini-pro",
             system_instruction=SYSTEM_PROMPT
         )
         
