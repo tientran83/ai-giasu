@@ -6,10 +6,12 @@
     <title>AI Gia sư Socratic</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e1e2e; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 90vh; }
-        h1 { text-align: center; font-size: 1.2rem; }
-        #chat-box { flex: 1; overflow-y: auto; border: 1px solid #444; padding: 10px; border-radius: 8px; margin-bottom: 10px; background: #181825; }
-        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; max-width: 80%; }
-        .user { background: #007bff; align-self: flex-end; margin-left: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        h1 { font-size: 1.2rem; margin: 0; }
+        .clear-btn { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        #chat-box { flex: 1; overflow-y: auto; border: 1px solid #444; padding: 10px; border-radius: 8px; margin-bottom: 10px; background: #181825; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 8px 12px; border-radius: 6px; max-width: 80%; word-wrap: break-word; }
+        .user { background: #007bff; align-self: flex-end; }
         .ai { background: #313244; align-self: flex-start; }
         #input-container { display: flex; gap: 10px; }
         input { flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #313244; color: #fff; }
@@ -17,49 +19,85 @@
     </style>
 </head>
 <body>
-    <h1>🎓 AI Gia sư Socratic</h1>
-    <div id="chat-box">
-        <div class="message ai">Chào bạn! Hôm nay chúng ta sẽ cùng học chủ đề nào? Hãy gửi câu hỏi cho mình nhé!</div>
+    <div class="header">
+        <h1>🎓 AI Gia sư Socratic</h1>
+        <button class="clear-btn" onclick="clearHistory()">Xóa bài học cũ</button>
     </div>
+    
+    <div id="chat-box"></div>
+
     <div id="input-container">
-        <input type="text" id="user-input" placeholder="Nhập câu hỏi tại đây...">
+        <input type="text" id="user-input" placeholder="Nhập câu hỏi tại đây..." onkeypress="if(event.key==='Enter') sendMessage()">
         <button onclick="sendMessage()">Gửi</button>
     </div>
 
     <script>
+        let chatHistory = JSON.parse(localStorage.getItem("ai_giasu_history")) || [];
+
+        function renderHistory() {
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML = "";
+            
+            if (chatHistory.length === 0) {
+                appendMessage("ai", "Chào bạn! Hôm nay chúng ta sẽ cùng học chủ đề nào? Hãy gửi câu hỏi cho mình nhé!");
+                return;
+            }
+
+            chatHistory.forEach(item => {
+                const roleClass = item.role === "user" ? "user" : "ai";
+                appendMessage(roleClass, item.parts[0]);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function appendMessage(role, text) {
+            const chatBox = document.getElementById("chat-box");
+            const div = document.createElement("div");
+            div.className = `message ${role}`;
+            div.innerText = text;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
         async function sendMessage() {
             const input = document.getElementById("user-input");
             const message = input.value.trim();
             if (!message) return;
 
-            const chatBox = document.getElementById("chat-box");
-            
-            const userDiv = document.createElement("div");
-            userDiv.className = "message user";
-            userDiv.innerText = message;
-            chatBox.appendChild(userDiv);
+            appendMessage("user", message);
             input.value = "";
 
             try {
                 const response = await fetch("/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify({ message: message, history: chatHistory })
                 });
                 const data = await response.json();
-                
-                const aiDiv = document.createElement("div");
-                aiDiv.className = "message ai";
-                aiDiv.innerText = data.response || data.reply || data.message || "Không nhận được phản hồi";
-                chatBox.appendChild(aiDiv);
+                const aiReply = data.response || "Không nhận được phản hồi";
+
+                appendMessage("ai", aiReply);
+
+                // Cập nhật lịch sử
+                chatHistory.push({ role: "user", parts: [message] });
+                chatHistory.push({ role: "model", parts: [aiReply] });
+                localStorage.setItem("ai_giasu_history", JSON.stringify(chatHistory));
+
             } catch (err) {
-                const aiDiv = document.createElement("div");
-                aiDiv.className = "message ai";
-                aiDiv.innerText = "Lỗi kết nối Server!";
-                chatBox.appendChild(aiDiv);
+                appendMessage("ai", "Lỗi kết nối Server!");
             }
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
+
+        function clearHistory() {
+            if (confirm("Bạn có chắc muốn xóa lịch sử trò chuyện để học lại từ đầu?")) {
+                localStorage.removeItem("ai_giasu_history");
+                chatHistory = [];
+                renderHistory();
+            }
+        }
+
+        // Tự động tải lịch sử khi mở web
+        renderHistory();
     </script>
 </body>
 </html>
