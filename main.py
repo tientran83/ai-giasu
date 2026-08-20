@@ -28,9 +28,9 @@ def chat(req: ChatRequest):
             "Bạn là một AI Gia sư dạy lập trình từ con số 0. "
             "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
-        # Cập nhật tên mô hình Gemini chuẩn tại đây
+        # Sử dụng mô hình gemini-2.5-flash với định dạng đường dẫn chuẩn
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="models/gemini-2.5-flash",
             contents=req.message,
             config={"system_instruction": sys_instruct}
         )
