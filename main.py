@@ -1,12 +1,14 @@
 import os
-import requests
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from google import genai
 
 app = FastAPI()
 
+# Lấy API Key từ biến môi trường của Render
 api_key = os.environ.get("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key) if api_key else None
 
 class ChatRequest(BaseModel):
     message: str
@@ -18,33 +20,20 @@ def read_root():
 
 @app.post("/chat")
 def chat(req: ChatRequest):
-    if not api_key:
+    if not client:
         return {"response": "Lỗi: Chưa cấu hình GEMINI_API_KEY trên Render!"}
     
-    # Endpoint chuẩn v1beta sử dụng mô hình gemini-2.5-flash
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-    
-    payload = {
-        "system_instruction": {
-            "parts": [{"text": "Bạn là một AI Gia sư dạy lập trình từ con số 0. Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."}]
-        },
-        "contents": [
-            {
-                "parts": [{"text": req.message}]
-            }
-        ]
-    }
-    
     try:
-        res = requests.post(url, json=payload, timeout=30)
-        data = res.json()
-        
-        if res.status_code == 200:
-            text = data["candidates"][0]["content"]["parts"][0]["text"]
-            return {"response": text}
-        else:
-            error_msg = data.get("error", {}).get("message", res.text)
-            return {"response": f"Lỗi từ Google ({res.status_code}): {error_msg}"}
-            
+        sys_instruct = (
+            "Bạn là một AI Gia sư dạy lập trình từ con số 0. "
+            "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
+        )
+        # Cập nhật tên mô hình Gemini chuẩn tại đây
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=req.message,
+            config={"system_instruction": sys_instruct}
+        )
+        return {"response": response.text}
     except Exception as e:
-        return {"response": f"Lỗi hệ thống: {str(e)}"}
+        return {"response": f"Lỗi từ Google: {str(e)}"}
