@@ -16,7 +16,6 @@ def read_root():
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    # Khởi tạo client trực tiếp trong từng lượt gửi để tránh kẹt luồng/ngắt kết nối
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return {"response": "Lỗi: Chưa cấu hình GEMINI_API_KEY trên Render!"}
@@ -27,12 +26,12 @@ async def chat(req: ChatRequest):
             "Bạn là một AI Gia sư dạy lập trình từ con số 0. "
             "Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
+        # Sử dụng đúng model gemini-3.6-flash tương thích với API Key của bạn
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.6-flash",
             contents=req.message,
             config={"system_instruction": sys_instruct}
         )
         return {"response": response.text}
     except Exception as e:
         return {"response": f"Lỗi xử lý AI: {str(e)}"}
-
