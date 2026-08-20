@@ -25,9 +25,9 @@ def chat(req: ChatRequest):
         return {"response": "Lỗi: Chưa cấu hình GEMINI_API_KEY trên Render!"}
     
     try:
-        # Sử dụng mô hình Gemini 2.0 Flash mới nhất
+        # Sử dụng đúng mô hình Google yêu cầu
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
+            model_name="gemini-3.6-flash",
             system_instruction="Bạn là một AI Gia sư dạy lập trình từ con số 0. Hãy giải thích ngắn gọn, dễ hiểu, dùng ví dụ đời sống."
         )
         response = model.generate_content(req.message)
